@@ -43,6 +43,7 @@ class SphereTracingRenderer(torch.nn.Module):
         n_rays, _ = origins.shape
         points = torch.zeros_like(origins)
         mask = torch.zeros(size=(n_rays, 1))
+
         for i in range(n_rays):
             start = origins[i, :] + directions[i, :] * self.near
             end = origins[i, :] + directions[i, :] * self.far
@@ -55,11 +56,11 @@ class SphereTracingRenderer(torch.nn.Module):
                 dir,
                 self.max_iters,
             )
-            if closest_point != end:
+            if torch.linalg.norm(closest_point) != max_dist:
                 points[i, :] = closest_point
                 mask[i, :] = 1
 
-        return points, mask
+        return points, (mask == 1)
 
     def _get_closest_point(self, implicit_fn, start, max_dist, dir, max_iter, eps=1e-5):
         p = start

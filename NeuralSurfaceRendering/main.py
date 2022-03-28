@@ -20,7 +20,7 @@ from ray_utils import (
     get_random_pixels_from_image,
     get_rays_from_pixels
 )
-from data_utils import (
+from NeuralSurfaceRendering.data_utils import (
     create_surround_cameras,
 )
 from dataset import (
