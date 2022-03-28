@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 
 DEFAULT_DATA_ROOT = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "data"
+    os.path.dirname(os.path.realpath(__file__)), "NeuralRadianceFields/data"
 )
 
 DEFAULT_URL_ROOT = "https://dl.fbaipublicfiles.com/pytorch3d_nerf_data"
@@ -66,7 +66,7 @@ def get_nerf_datasets(
 
     Args:
         dataset_name: The name of the dataset to load.
-        image_size: A tuple (height, width) denoting the sizes of the loaded dataset images.
+        image_size: A tuple (height, width) denoting the sizes of the loaded dataset images_neural_surface.
         data_root: The root folder at which the data is stored.
         autodownload: Auto-download the dataset files in case they are missing.
 

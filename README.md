@@ -6,7 +6,7 @@ Assignment 4
 Assignment 4 will build on top of the assignment 3 codebase. Copy the following files and directories into your assignment 3 codebase:
 
 ```bash
-a4/
+NeuralSurfaceRendering/
 render_functions.py
 data_utils.py
 ```
@@ -17,13 +17,13 @@ In this part you will implement sphere tracing for rendering an SDF, and use thi
 
 You can run the code for part 1 with:
 ```bash
-# mkdir images (uncomment when running for the first time)
-python -m a4.main --config-name=torus
+# mkdir images_neural_surface (uncomment when running for the first time)
+python -m NeuralSurfaceRendering.main --config-name=torus
 ```
 
 This should save `part_1.gif` in the `images' folder. Please include this in your submission along with a short writeup describing your implementation.
 
-![Torus](images/part_1.gif)
+![Torus](images_neural_surface/part_1.gif)
 
 ##  2. Optimizing a Neural SDF (30pts)
 
@@ -37,12 +37,12 @@ In this part you need to:
 
 After this, you should be able to train a NeuralSurface representation by:
 ```bash
-python -m a4.main --config-name=points
+python -m NeuralSurfaceRendering.main --config-name=points
 ```
 
 This should save save `part_2_input.gif` and `part_2.gif` in the `images` folder. The former visualizes the input point cloud used for training, and the latter shows your prediction which you should include on the webpage alongwith brief descriptions of your MLP and eikonal loss. You might need to tune hyperparameters (e.g. number of layers, epochs, weight of regularization, etc.) for good results.
 
-![Bunny geometry](images/part_2.gif)
+![Bunny geometry](images_neural_surface/part_2.gif)
 
 ##  3. VolSDF (30 pts)
 
@@ -59,12 +59,12 @@ In this part, you will implement a function converting SDF -> volume density and
 After implementing these, train an SDF on the lego bulldozer model with
 
 ```bash
-python -m a4.main --config-name=volsdf
+python -m NeuralSurfaceRendering.main --config-name=volsdf
 ```
 
 This will save `part_3_geometry.gif` and `part_3.gif`. Experiment with hyper-parameters to and attach your best results on your webpage. Comment on the settings you chose, and why they seem to work well.
 
-![Bulldozer geometry](images/part_3_geometry.gif) ![Bulldozer color](images/part_3.gif)
+![Bulldozer geometry](images_neural_surface/part_3_geometry.gif) ![Bulldozer color](images_neural_surface/part_3.gif)
 
 
 ## 4. Neural Surface Extras (CHOOSE ONE! More than one is extra credit)

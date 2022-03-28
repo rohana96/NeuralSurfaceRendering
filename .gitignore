@@ -3,7 +3,7 @@ outputs
 images/*.png
 data/*.png
 data/*.pth
-data/*_license.txt
+NeuralRadianceFields/data/*_license.txt
 __pycache__/
 *.pth
 

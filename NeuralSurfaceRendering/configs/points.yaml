@@ -4,7 +4,7 @@ type: train_points
 
 data:
   image_size: [256, 256]
-  point_cloud_path: a4/data/bunny_pointcloud.npz
+  point_cloud_path: NeuralSurfaceRendering/data/bunny_pointcloud.npz
 
 renderer:
   type: sphere_tracing

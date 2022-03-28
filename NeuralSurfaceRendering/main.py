@@ -1,5 +1,4 @@
 import os
-import warnings
 
 import hydra
 import numpy as np
@@ -8,17 +7,12 @@ import tqdm
 import imageio
 
 from omegaconf import DictConfig
-from PIL import Image
-from pytorch3d.renderer import (
-    PerspectiveCameras,
-    look_at_view_transform
-)
 import matplotlib.pyplot as plt
 
 from sampler import sampler_dict
-from a4.implicit import implicit_dict
-from a4.renderer import renderer_dict
-from a4.losses import eikonal_loss, sphere_loss, get_random_points, select_random_points
+from NeuralSurfaceRendering.implicit import implicit_dict
+from NeuralSurfaceRendering.renderer import renderer_dict
+from NeuralSurfaceRendering.losses import eikonal_loss, sphere_loss, get_random_points, select_random_points
 
 from ray_utils import (
     sample_images_at_xy,
@@ -27,17 +21,13 @@ from ray_utils import (
     get_rays_from_pixels
 )
 from data_utils import (
-    dataset_from_config,
     create_surround_cameras,
-    vis_grid,
-    vis_rays,
 )
 from dataset import (
     get_nerf_datasets,
-    trivial_collate,
 )
-from render_functions import render_geometry
-from render_functions import render_points
+from NeuralRadianceFields.render_functions import render_geometry
+from NeuralRadianceFields.render_functions import render_points
 
 
 # Model class containing:
@@ -136,7 +126,7 @@ def render(
     all_images = render_images(
         model, cameras, cfg.data.image_size
     )
-    imageio.mimsave('images/part_1.gif', [np.uint8(im * 255) for im in all_images])
+    imageio.mimsave('images_neural_surface/part_1.gif', [np.uint8(im * 255) for im in all_images])
 
 
 def create_model(cfg):
@@ -210,7 +200,7 @@ def train_points(
         all_points.unsqueeze(0), create_surround_cameras(3.0, n_poses=20, up=(0.0, 1.0, 0.0), focal_length=2.0),
         cfg.data.image_size, file_prefix='points'
     )
-    imageio.mimsave('images/part_2_input.gif', [np.uint8(im * 255) for im in point_images])
+    imageio.mimsave('images_neural_surface/part_2_input.gif', [np.uint8(im * 255) for im in point_images])
 
     # Run the main training loop.
     for epoch in range(0, cfg.training.num_epochs):
@@ -269,7 +259,7 @@ def train_points(
                     model, create_surround_cameras(3.0, n_poses=20, up=(0.0, 1.0, 0.0), focal_length=2.0),
                     cfg.data.image_size, file_prefix='eikonal', thresh=0.002,
                 )
-                imageio.mimsave('images/part_2.gif', [np.uint8(im * 255) for im in test_images])
+                imageio.mimsave('images_neural_surface/part_2.gif', [np.uint8(im * 255) for im in test_images])
             except Exception as e:
                 print("Empty mesh")
                 pass
@@ -394,14 +384,14 @@ def train_images(
                 model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
                 cfg.data.image_size, file_prefix='volsdf'
             )
-            imageio.mimsave('images/part_3.gif', [np.uint8(im * 255) for im in test_images])
+            imageio.mimsave('images_neural_surface/part_3.gif', [np.uint8(im * 255) for im in test_images])
 
             try:
                 test_images = render_geometry(
                     model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
                     cfg.data.image_size, file_prefix='volsdf_geometry'
                 )
-                imageio.mimsave('images/part_3_geometry.gif', [np.uint8(im * 255) for im in test_images])
+                imageio.mimsave('images_neural_surface/part_3_geometry.gif', [np.uint8(im * 255) for im in test_images])
             except Exception as e:
                 print("Empty mesh")
                 pass

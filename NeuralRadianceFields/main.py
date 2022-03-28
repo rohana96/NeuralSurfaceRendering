@@ -157,7 +157,7 @@ def render(
     all_images = render_images(
         model, cameras, cfg.data.image_size
     )
-    imageio.mimsave('images/part_1.gif', [np.uint8(im * 255) for im in all_images])
+    imageio.mimsave('images_neural_surface/part_1.gif', [np.uint8(im * 255) for im in all_images])
 
 
 def train(
@@ -185,11 +185,11 @@ def train(
         lr=cfg.training.lr
     )
 
-    # Render images before training
+    # Render images_neural_surface before training
     cameras = [item['camera'] for item in train_dataset]
     render_images(
         model, cameras, image_size,
-        save=True, file_prefix='images/part_2_before_training'
+        save=True, file_prefix='images_neural_surface/part_2_before_training'
     )
 
     # Train
@@ -225,15 +225,15 @@ def train(
     print("Box center:", tuple(np.array(model.implicit_fn.sdf.center.data.detach().cpu()).tolist()[0]))
     print("Box side lengths:", tuple(np.array(model.implicit_fn.sdf.side_lengths.data.detach().cpu()).tolist()[0]))
 
-    # Render images after training
+    # Render images_neural_surface after training
     render_images(
         model, cameras, image_size,
-        save=True, file_prefix='images/part_2_after_training'
+        save=True, file_prefix='images_neural_surface/part_2_after_training'
     )
     all_images = render_images(
         model, create_surround_cameras(3.0, n_poses=20), image_size, file_prefix='part_2'
     )
-    imageio.mimsave('images/part_2.gif', [np.uint8(im * 255) for im in all_images])
+    imageio.mimsave('images_neural_surface/part_2.gif', [np.uint8(im * 255) for im in all_images])
 
 
 def create_model(cfg):
@@ -371,10 +371,10 @@ def train_nerf(
                     model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
                     cfg.data.image_size, file_prefix='nerf_no_view'
                 )
-                imageio.mimsave('images/part_3_noview.gif', [np.uint8(im * 255) for im in test_images])
+                imageio.mimsave('images_neural_surface/part_3_noview.gif', [np.uint8(im * 255) for im in test_images])
 
 
-@hydra.main(config_path='./configs', config_name='sphere')
+@hydra.main(config_path='configs', config_name='sphere')
 def main(cfg: DictConfig):
     os.chdir(hydra.utils.get_original_cwd())
     if cfg.type == 'render':
