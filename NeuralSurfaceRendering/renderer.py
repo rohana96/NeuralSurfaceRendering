@@ -45,7 +45,7 @@ class SphereTracingRenderer(torch.nn.Module):
         mask = torch.zeros(size=(n_rays, 1))
         for i in range(n_rays):
             start = origins[i, :] + directions[i, :] * self.near
-            end = origins[i, :] + directions[i, :]*self.far
+            end = origins[i, :] + directions[i, :] * self.far
             max_dist = self.far
             dir = directions[i, :]
             closest_point = self._get_closest_point(
@@ -140,7 +140,24 @@ class VolumeSDFRenderer(torch.nn.Module):
             eps: float = 1e-10
     ):
         # TODO (Q3): Copy code from VolumeRenderer._compute_weights
-        pass
+        n_rays, n_points, _ = deltas.shape
+
+        transmittance = torch.ones(n_rays, 1, device=deltas.device)
+        weight = transmittance * (1. - torch.exp(-rays_density[:, 0] * deltas[:, 0]))
+
+        transmittances = [transmittance]
+        weights = [weight]
+
+        for i in range(1, n_points):
+            transmittance = transmittances[i - 1] * torch.exp(-rays_density[:, i - 1] * deltas[:, i - 1])
+            transmittances.append(transmittance)
+            weight = transmittance * (1. - torch.exp(-rays_density[:, i] * deltas[:, i]))
+            weights.append(weight)
+
+        # TODO (1.5): Compute weight used for rendering from transmittance and density
+        weights = torch.stack(weights).to(deltas.device)
+        weights = weights.permute(1, 0, 2)
+        return weights
 
     def _aggregate(
             self,
@@ -148,7 +165,10 @@ class VolumeSDFRenderer(torch.nn.Module):
             rays_color: torch.Tensor
     ):
         # TODO (Q3): Copy code from VolumeRenderer._aggregate
-        pass
+        n_rays, n_points, _ = weights.shape
+        rays_feature = rays_color.reshape(n_rays, n_points, rays_color.shape[-1])
+        feature = torch.sum(rays_feature * weights, dim=1)
+        return feature
 
     def forward(
             self,
