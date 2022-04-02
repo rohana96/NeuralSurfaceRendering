@@ -6,7 +6,7 @@ from torch import autograd
 from ray_utils import RayBundle
 
 
-def xavier_init(self, layer):
+def xavier_init(layer):
     torch.nn.init.xavier_uniform_(layer.weight.data)
 
 
@@ -260,14 +260,15 @@ class NeuralSurface(torch.nn.Module):
         self.encoder = MLPWithInputSkips(n_layers=self.n_layers_distance, input_dim=embedding_dim_xyz, output_dim=self.n_hidden_neurons_distance,
                                          skip_dim=embedding_dim_xyz, hidden_dim=self.n_hidden_neurons_distance, input_skips=cfg.append_distance)
         self.layer_distance = nn.Linear(self.n_hidden_neurons_distance, 1)
-        self.xavier_init(self.layer_distance)
+        xavier_init(self.layer_distance)
 
         # TODO (Q3): Implement Neural Surface MLP to output per-point color
         self.layer_rgb1 = nn.Linear(self.n_hidden_neurons_distance, self.n_hidden_neurons_color)
-        self.xavier_init(self.layer_rgb1)
-        self.layer_rgb2 = nn.Linear(self.n_hidden_neurons_color, 3)
-        self.xavier_init(self.layer_rgb2)
-
+        xavier_init(self.layer_rgb1)
+        self.layer_rgb2 = nn.Linear(self.n_hidden_neurons_color, self.n_hidden_neurons_color)
+        xavier_init(self.layer_rgb2)
+        self.layer_color = nn.Linear(self.n_hidden_neurons_color, 3)
+        xavier_init(self.layer_color)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
@@ -300,7 +301,8 @@ class NeuralSurface(torch.nn.Module):
         out = self.encoder(xyz, xyz)
         distance = self.layer_distance(out)
         out = self.relu(self.layer_rgb1(out))
-        rgb = self.sigmoid(self.layer_rgb2(out))
+        out = self.relu(self.layer_rgb2(out))
+        rgb = self.sigmoid(self.layer_color(out))
         return rgb
 
     def get_distance_color(
@@ -319,7 +321,8 @@ class NeuralSurface(torch.nn.Module):
         out = self.encoder(xyz, xyz)
         distance = self.layer_distance(out)
         out = self.relu(self.layer_rgb1(out))
-        rgb = self.sigmoid(self.layer_rgb2(out))
+        out = self.relu(self.layer_rgb2(out))
+        rgb = self.sigmoid(self.layer_color(out))
         return rgb
 
     def forward(self, points):

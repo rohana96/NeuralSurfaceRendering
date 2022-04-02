@@ -52,7 +52,6 @@ class SphereTracingRenderer(torch.nn.Module):
         n_rays, _ = origins.shape
         points = torch.zeros_like(origins)
         mask = torch.zeros(size=(n_rays, 1))
-<<<<<<< HEAD
         points = (origins.clone()).to(device)
         t = torch.zeros(size=(n_rays, 1)).to(device)
 
@@ -62,7 +61,7 @@ class SphereTracingRenderer(torch.nn.Module):
             points = origins + t * directions
         mask = implicit_fn(points) < self.eps 
         return points, mask
-        
+
     def forward(
             self,
             sampler,
