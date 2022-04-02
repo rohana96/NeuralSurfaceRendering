@@ -52,7 +52,6 @@ class SphereTracingRenderer(torch.nn.Module):
         n_rays, _ = origins.shape
         points = torch.zeros_like(origins)
         mask = torch.zeros(size=(n_rays, 1))
-
         points = (origins.clone()).to(device)
         t = torch.zeros(size=(n_rays, 1)).to(device)
 

@@ -25,7 +25,7 @@ This should save `part_1.gif` in the `images' folder. Please include this in you
 
 ![Torus](images_neural_surface/part_1.gif)
 
-##  2. Optimizing a Neural SDF (30pts)
+##  2. Optimizing a Neural SDF (30pts)  
 
 In this part, you will implement an MLP architecture for a neural SDF, and train this neural SDF on point cloud data. You will do this by training the network to output a zero value at the observed points. To encourage the network to learn an SDF instead of an arbitrary function, we will use an 'eikonal' regularization which enforces the gradients of the predictions to behave in a certain way (search lecture slides for hints).
 

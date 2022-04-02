@@ -4,7 +4,11 @@ import torch.nn.functional as F
 
 def eikonal_loss(gradients):
     # TODO (Q2): Implement eikonal loss on Nx3 gradients
-    return torch.mean(torch.linalg.norm(gradients, dim=-1) - torch.ones_like(gradients))
+    return torch.mean(
+        torch.abs(
+            torch.linalg.norm(gradients, dim=-1) - torch.ones(gradients.shape[0], device=gradients.device)
+            )
+        )
 
 
 def sphere_loss(signed_distance, points, radius=1.0):
