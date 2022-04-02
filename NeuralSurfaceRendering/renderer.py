@@ -3,7 +3,14 @@ import torch
 from typing import List, Optional, Tuple
 from pytorch3d.renderer.cameras import CamerasBase
 import pdb
+import tqdm
 
+def get_device():
+    if torch.cuda.is_available():
+        return 'cuda'
+    return 'cpu'
+
+device = get_device()
 
 # Volume renderer which integrates color and density along rays
 # according to the equations defined in [Mildenhall et al. 2020]
@@ -18,6 +25,7 @@ class SphereTracingRenderer(torch.nn.Module):
         self.near = cfg.near
         self.far = cfg.far
         self.max_iters = cfg.max_iters
+        self.eps = 1e-5
 
     def sphere_tracing(
             self,
@@ -40,37 +48,19 @@ class SphereTracingRenderer(torch.nn.Module):
         #   in order to compute intersection points of rays with the implicit surface
         # 2) Maintain a mask with the same batch dimension as the ray origins,
         #   indicating which points hit the surface, and which do not
+        
         n_rays, _ = origins.shape
         points = torch.zeros_like(origins)
         mask = torch.zeros(size=(n_rays, 1))
+        points = (origins.clone()).to(device)
+        t = torch.zeros(size=(n_rays, 1)).to(device)
 
-        for i in range(n_rays):
-            start = origins[i, :] + directions[i, :] * self.near
-            end = origins[i, :] + directions[i, :]*self.far
-            max_dist = self.far
-            dir = directions[i, :]
-            closest_point = self._get_closest_point(
-                implicit_fn,
-                start,
-                max_dist,
-                dir,
-                self.max_iters,
-            )
-            if torch.linalg.norm(closest_point) != max_dist:
-                points[i, :] = closest_point
-                mask[i, :] = 1
-
-        return points, (mask == 1)
-
-    def _get_closest_point(self, implicit_fn, start, max_dist, dir, max_iter, eps=1e-5):
-        p = start
-        it = 0
-        t = 0
-        while implicit_fn(p) > eps and torch.linalg.norm(p) < max_dist and it < max_iter:
-            t += implicit_fn(p)
-            p = start + t * dir
-            it += 1
-        return p
+        for i in range(self.max_iters):
+            points_sdf = implicit_fn(points)
+            t += points_sdf
+            points = origins + t * directions
+        mask = implicit_fn(points) < self.eps 
+        return points, mask
 
     def forward(
             self,
