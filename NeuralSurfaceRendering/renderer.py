@@ -48,10 +48,11 @@ class SphereTracingRenderer(torch.nn.Module):
         #   in order to compute intersection points of rays with the implicit surface
         # 2) Maintain a mask with the same batch dimension as the ray origins,
         #   indicating which points hit the surface, and which do not
-        
+
         n_rays, _ = origins.shape
         points = torch.zeros_like(origins)
         mask = torch.zeros(size=(n_rays, 1))
+<<<<<<< HEAD
         points = (origins.clone()).to(device)
         t = torch.zeros(size=(n_rays, 1)).to(device)
 
@@ -61,7 +62,7 @@ class SphereTracingRenderer(torch.nn.Module):
             points = origins + t * directions
         mask = implicit_fn(points) < self.eps 
         return points, mask
-
+        
     def forward(
             self,
             sampler,
@@ -131,7 +132,24 @@ class VolumeSDFRenderer(torch.nn.Module):
             eps: float = 1e-10
     ):
         # TODO (Q3): Copy code from VolumeRenderer._compute_weights
-        pass
+        n_rays, n_points, _ = deltas.shape
+
+        transmittance = torch.ones(n_rays, 1, device=deltas.device)
+        weight = transmittance * (1. - torch.exp(-rays_density[:, 0] * deltas[:, 0]))
+
+        transmittances = [transmittance]
+        weights = [weight]
+
+        for i in range(1, n_points):
+            transmittance = transmittances[i - 1] * torch.exp(-rays_density[:, i - 1] * deltas[:, i - 1])
+            transmittances.append(transmittance)
+            weight = transmittance * (1. - torch.exp(-rays_density[:, i] * deltas[:, i]))
+            weights.append(weight)
+
+        # TODO (1.5): Compute weight used for rendering from transmittance and density
+        weights = torch.stack(weights).to(deltas.device)
+        weights = weights.permute(1, 0, 2)
+        return weights
 
     def _aggregate(
             self,
@@ -139,7 +157,10 @@ class VolumeSDFRenderer(torch.nn.Module):
             rays_color: torch.Tensor
     ):
         # TODO (Q3): Copy code from VolumeRenderer._aggregate
-        pass
+        n_rays, n_points, _ = weights.shape
+        rays_feature = rays_color.reshape(n_rays, n_points, rays_color.shape[-1])
+        feature = torch.sum(rays_feature * weights, dim=1)
+        return feature
 
     def forward(
             self,

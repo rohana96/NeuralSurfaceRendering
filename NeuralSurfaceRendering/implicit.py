@@ -1,16 +1,20 @@
 import torch
 import torch.nn.functional as F
-
+import torch.nn as nn
 from torch import autograd
 
 from ray_utils import RayBundle
 
 
+def xavier_init(self, layer):
+    torch.nn.init.xavier_uniform_(layer.weight.data)
+
+
 # Sphere SDF class
 class SphereSDF(torch.nn.Module):
     def __init__(
-        self,
-        cfg
+            self,
+            cfg
     ):
         super().__init__()
 
@@ -34,8 +38,8 @@ class SphereSDF(torch.nn.Module):
 # Box SDF class
 class BoxSDF(torch.nn.Module):
     def __init__(
-        self,
-        cfg
+            self,
+            cfg
     ):
         super().__init__()
 
@@ -61,8 +65,8 @@ class BoxSDF(torch.nn.Module):
 # Torus SDF class
 class TorusSDF(torch.nn.Module):
     def __init__(
-        self,
-        cfg
+            self,
+            cfg
     ):
         super().__init__()
 
@@ -96,8 +100,8 @@ sdf_dict = {
 # Converts SDF into density/feature volume
 class SDFSurface(torch.nn.Module):
     def __init__(
-        self,
-        cfg
+            self,
+            cfg
     ):
         super().__init__()
 
@@ -108,7 +112,7 @@ class SDFSurface(torch.nn.Module):
         self.feature = torch.nn.Parameter(
             torch.ones_like(torch.tensor(cfg.feature.val).float().unsqueeze(0)), requires_grad=cfg.feature.opt
         )
-    
+
     def get_distance(self, points):
         points = points.view(-1, 3)
         return self.sdf(points)
@@ -127,20 +131,19 @@ class SDFSurface(torch.nn.Module):
             base_color = 1.0
 
         return base_color * self.feature * points.new_ones(points.shape[0], 1)
-    
+
     def forward(self, points):
         return self.get_distance(points)
 
 
-
 class HarmonicEmbedding(torch.nn.Module):
     def __init__(
-        self,
-        in_channels: int = 3,
-        n_harmonic_functions: int = 6,
-        omega0: float = 1.0,
-        logspace: bool = True,
-        include_input: bool = True,
+            self,
+            in_channels: int = 3,
+            n_harmonic_functions: int = 6,
+            omega0: float = 1.0,
+            logspace: bool = True,
+            include_input: bool = True,
     ) -> None:
         super().__init__()
 
@@ -183,13 +186,13 @@ class LinearWithRepeat(torch.nn.Linear):
 
 class MLPWithInputSkips(torch.nn.Module):
     def __init__(
-        self,
-        n_layers: int,
-        input_dim: int,
-        output_dim: int,
-        skip_dim: int,
-        hidden_dim: int,
-        input_skips,
+            self,
+            n_layers: int,
+            input_dim: int,
+            output_dim: int,
+            skip_dim: int,
+            hidden_dim: int,
+            input_skips,
     ):
         super().__init__()
 
@@ -224,57 +227,107 @@ class MLPWithInputSkips(torch.nn.Module):
         return y
 
 
+# implicit_function:
+#   type: neural_surface
+#
+#   n_harmonic_functions_xyz: 4  ##
+#
+#   n_layers_distance: 6 ##
+#   n_hidden_neurons_distance: 128 ##
+#   append_distance: []
+#
+#   n_layers_color: 2  ##
+#   n_hidden_neurons_color: 128 ##
+#   append_color: []
+
 class NeuralSurface(torch.nn.Module):
     def __init__(
-        self,
-        cfg,
+            self,
+            cfg,
     ):
         super().__init__()
         # TODO (Q2): Implement Neural Surface MLP to output per-point SDF
+
+        self.n_hidden_neurons_distance = cfg['n_hidden_neurons_distance']
+        self.n_layers_distance = cfg['n_layers_distance']
+
+        self.n_hidden_neurons_color = cfg['n_hidden_neurons_color']
+        self.n_layers_color = cfg['n_layers_color']
+
+        self.harmonic_embedding_xyz = HarmonicEmbedding(3, cfg.n_harmonic_functions_xyz)
+        embedding_dim_xyz = self.harmonic_embedding_xyz.output_dim
+
+        self.encoder = MLPWithInputSkips(n_layers=self.n_layers_distance, input_dim=embedding_dim_xyz, output_dim=self.n_hidden_neurons_distance,
+                                         skip_dim=embedding_dim_xyz, hidden_dim=self.n_hidden_neurons_distance, input_skips=cfg.append_distance)
+        self.layer_distance = nn.Linear(self.n_hidden_neurons_distance, 1)
+        self.xavier_init(self.layer_distance)
+
         # TODO (Q3): Implement Neural Surface MLP to output per-point color
+        self.layer_rgb1 = nn.Linear(self.n_hidden_neurons_distance, self.n_hidden_neurons_color)
+        self.xavier_init(self.layer_rgb1)
+        self.layer_rgb2 = nn.Linear(self.n_hidden_neurons_color, 3)
+        self.xavier_init(self.layer_rgb2)
+
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
     def get_distance(
-        self,
-        points
+            self,
+            points
     ):
-        '''
+        """
         TODO: Q2
         Output:
             distance: N X 1 Tensor, where N is number of input points
-        '''
+        """
         points = points.view(-1, 3)
-        pass
-    
+        xyz = self.harmonic_embedding_xyz(points)
+        out = self.encoder(xyz, xyz)
+        distance = self.layer_distance(out)
+        return distance
+
     def get_color(
-        self,
-        points
+            self,
+            points
     ):
-        '''
+        """
         TODO: Q3
         Output:
             distance: N X 3 Tensor, where N is number of input points
-        '''
+        """
         points = points.view(-1, 3)
-        pass
-    
+        xyz = self.harmonic_embedding_xyz(points)
+        out = self.encoder(xyz, xyz)
+        distance = self.layer_distance(out)
+        out = self.relu(self.layer_rgb1(out))
+        rgb = self.sigmoid(self.layer_rgb2(out))
+        return rgb
+
     def get_distance_color(
-        self,
-        points
+            self,
+            points
     ):
-        '''
+        """
         TODO: Q3
         Output:
             distance, points: N X 1, N X 3 Tensors, where N is number of input points
         You may just implement this by independent calls to get_distance, get_color
             but, depending on your MLP implementation, it maybe more efficient to share some computation
-        '''
-        
+        """
+        points = points.view(-1, 3)
+        xyz = self.harmonic_embedding_xyz(points)
+        out = self.encoder(xyz, xyz)
+        distance = self.layer_distance(out)
+        out = self.relu(self.layer_rgb1(out))
+        rgb = self.sigmoid(self.layer_rgb2(out))
+        return rgb
+
     def forward(self, points):
         return self.get_distance(points)
 
     def get_distance_and_gradient(
-        self,
-        points
+            self,
+            points
     ):
         has_grad = torch.is_grad_enabled()
         points = points.view(-1, 3)
@@ -291,7 +344,7 @@ class NeuralSurface(torch.nn.Module):
                 retain_graph=has_grad,
                 only_inputs=True
             )[0]
-        
+
         return distance, gradient
 
 
