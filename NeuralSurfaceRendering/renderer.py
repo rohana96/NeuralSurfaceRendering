@@ -56,7 +56,7 @@ class SphereTracingRenderer(torch.nn.Module):
                 dir,
                 self.max_iters,
             )
-            if torch.linalg.norm(closest_point) != max_dist:
+            if torch.linalg.norm(closest_point) < max_dist:
                 points[i, :] = closest_point
                 mask[i, :] = 1
 
@@ -66,7 +66,7 @@ class SphereTracingRenderer(torch.nn.Module):
         p = start
         it = 0
         t = 0
-        while implicit_fn(p) > eps and torch.linalg.norm(p) < max_dist and it < max_iter:
+        while implicit_fn(p) > eps and it < max_iter:
             t += implicit_fn(p)
             p = start + t * dir
             it += 1
@@ -119,7 +119,12 @@ class SphereTracingRenderer(torch.nn.Module):
 
 def sdf_to_density(signed_distance, alpha, beta):
     # TODO (Q3): Convert signed distance to density with alpha, beta parameters
-    pass
+    sai = 0
+    if signed_distance <= 0:
+        sai = 0.5 * torch.exp(signed_distance / beta)
+    else:
+        sai = 1 - 0.5 * torch.exp(-signed_distance / beta)
+    return alpha * sai
 
 
 class VolumeSDFRenderer(torch.nn.Module):
@@ -192,7 +197,8 @@ class VolumeSDFRenderer(torch.nn.Module):
             # Call implicit function with sample points
             distance, color = implicit_fn.get_distance_color(cur_ray_bundle.sample_points)
             color = color.view(-1, n_pts, 3)
-            density = None  # TODO (Q3): convert SDF to density
+            alpha, beta = 10, 0.05
+            density = sdf_to_density(distance, alpha, beta)  # TODO (Q3): convert SDF to density
 
             # Compute length of each ray segment
             depth_values = cur_ray_bundle.sample_lengths[..., 0]
