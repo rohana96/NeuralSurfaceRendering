@@ -316,7 +316,7 @@ def train_images(
     pretrain_sdf(cfg, model)
 
     # Run the main training loop.
-    for epoch in range(start_epoch, cfg.training.num_epochs):
+    for epoch in tqdm.tqdm(range(start_epoch, cfg.training.num_epochs)):
         t_range = tqdm.tqdm(enumerate(train_dataloader))
 
         for iteration, batch in t_range:
@@ -385,16 +385,16 @@ def train_images(
         ):
             test_images = render_images(
                 model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
-                cfg.data.image_size, file_prefix='volsdf_neus_sparse_s50'
+                cfg.data.image_size, file_prefix='volsdf_sparse5'
             )
-            imageio.mimsave('images_neural_surface/part_4_neus_sparse_s50.gif', [np.uint8(im * 255) for im in test_images])
+            imageio.mimsave('images_neural_surface/part_3_volsdf_sparse5.gif', [np.uint8(im * 255) for im in test_images])
 
             try:
                 test_images = render_geometry(
                     model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
-                    cfg.data.image_size, file_prefix='volsdf_geometry_neus_sparse_s50'
+                    cfg.data.image_size, file_prefix='volsdf_geometry_sparse5'
                 )
-                imageio.mimsave('images_neural_surface/part_4_geometry_neus_s50.gif', [np.uint8(im * 255) for im in test_images])
+                imageio.mimsave('images_neural_surface/part_3_geometry_volsdf_sparse5.gif', [np.uint8(im * 255) for im in test_images])
             except Exception as e:
                 print("Empty mesh")
                 pass

@@ -6,17 +6,17 @@ data:
   image_size: [128, 128]
   dataset_name: lego
   sparse_views: True
-  sparsity_scale: 20
+  sparsity_scale: 10
 
 renderer:
   type: volume_sdf
   chunk_size: 32768
   white_background: False
-  distance_to_density: 'neus'  #'volsdf'
+  distance_to_density: 'volsdf'
 
   alpha: 10.0
   beta: 0.05
-  s: 50
+  s: 1000
 
 sampler:
   type: stratified
@@ -34,7 +34,7 @@ training:
   lr_scheduler_step_size: 50
   lr_scheduler_gamma: 0.8
 
-  checkpoint_path: ./volsdf_neus_50_checkpoint
+  checkpoint_path: ./volsdf_sparse5_checkpoint
   checkpoint_interval: 50
   resume: True
 

@@ -317,7 +317,7 @@ def train_nerf(
     # Run the main training loop.
     for epoch in range(start_epoch, cfg.training.num_epochs):
         t_range = tqdm.tqdm(enumerate(train_dataloader))
-        
+
         for iteration, batch in t_range:
             image, camera, camera_idx = batch[0].values()
             image = image.cuda().unsqueeze(0)
@@ -372,9 +372,9 @@ def train_nerf(
             with torch.no_grad():
                 test_images = render_images(
                     model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
-                    cfg.data.image_size, file_prefix='nerf_no_view_sparse'
+                    cfg.data.image_size, file_prefix='nerf_no_view_sparse_5'
                 )
-                imageio.mimsave('images_neural_surface/part_4_sparse_nerf.gif', [np.uint8(im * 255) for im in test_images])
+                imageio.mimsave('images_neural_surface/part_4_sparse_nerf_5.gif', [np.uint8(im * 255) for im in test_images])
 
 
 @hydra.main(config_path='configs', config_name='sphere')

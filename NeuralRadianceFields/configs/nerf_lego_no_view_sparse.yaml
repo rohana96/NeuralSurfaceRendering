@@ -20,7 +20,7 @@ data:
   image_size: [128, 128]
   dataset_name: lego
   sparse_views: True
-  sparsity_scale: 20
+  sparsity_scale: 5
 
 renderer:
   type: volume
