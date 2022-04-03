@@ -89,11 +89,45 @@ class TorusSDF(torch.nn.Module):
         )
         return (torch.linalg.norm(q, dim=-1) - self.radii[..., 1]).unsqueeze(-1)
 
+# Scene SDF class
+class SceneSDF(torch.nn.Module):
+    def __init__(
+            self,
+            cfg
+    ):
+        super().__init__()
+
+        self.side_lengths = torch.nn.Parameter(
+            torch.tensor(cfg.side_lengths.val).float().unsqueeze(0), requires_grad=cfg.side_lengths.opt
+        )
+        self.center = torch.nn.Parameter(
+            torch.tensor(cfg.center.val).float().unsqueeze(0), requires_grad=cfg.center.opt
+        )
+        self.radius = torch.nn.Parameter(
+            torch.tensor(cfg.radius.val).float(), requires_grad=cfg.radius.opt
+        )
+        self.radii = torch.nn.Parameter(
+            torch.tensor(cfg.radii.val).float().unsqueeze(0), requires_grad=cfg.radii.opt
+        )
+
+    def forward(self, points):
+        points = points.view(-1, 3)
+        diff = points - self.center
+        q = torch.stack(
+            [
+                torch.linalg.norm(diff[..., :2], dim=-1) - self.radii[..., 0],
+                diff[..., -1],
+            ],
+            dim=-1
+        )
+        return (torch.linalg.norm(q, dim=-1) - self.radii[..., 1]).unsqueeze(-1)
+
 
 sdf_dict = {
     'sphere': SphereSDF,
     'box': BoxSDF,
     'torus': TorusSDF,
+    'scene': SceneSDF
 }
 
 
@@ -296,13 +330,14 @@ class NeuralSurface(torch.nn.Module):
         Output:
             distance: N X 3 Tensor, where N is number of input points
         """
-        points = points.view(-1, 3)
-        xyz = self.harmonic_embedding_xyz(points)
-        out = self.encoder(xyz, xyz)
-        distance = self.layer_distance(out)
-        out = self.relu(self.layer_rgb1(out))
-        out = self.relu(self.layer_rgb2(out))
-        rgb = self.sigmoid(self.layer_color(out))
+        with torch.no_grad():
+            points = points.view(-1, 3)
+            xyz = self.harmonic_embedding_xyz(points)
+            out = self.encoder(xyz, xyz)
+            distance = self.layer_distance(out)
+            out = self.relu(self.layer_rgb1(out))
+            out = self.relu(self.layer_rgb2(out))
+            rgb = self.sigmoid(self.layer_color(out))
         return rgb
 
     def get_distance_color(
@@ -323,11 +358,15 @@ class NeuralSurface(torch.nn.Module):
         out = self.relu(self.layer_rgb1(out))
         out = self.relu(self.layer_rgb2(out))
         rgb = self.sigmoid(self.layer_color(out))
-        return rgb
+        out = {
+            'distance': distance,
+            'color': rgb
+        }
+        return out
 
     def forward(self, points):
-        return self.get_distance(points)
-
+        # return self.get_distance(points)
+        return self.get_distance_color(points)
     def get_distance_and_gradient(
             self,
             points

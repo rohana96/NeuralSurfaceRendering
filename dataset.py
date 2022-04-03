@@ -59,6 +59,8 @@ def get_nerf_datasets(
     image_size: Tuple[int, int],
     data_root: str = DEFAULT_DATA_ROOT,
     autodownload: bool = True,
+    sparse_views: bool = False,
+    sparsity_scale: int = 5
 ) -> Tuple[Dataset, Dataset, Dataset]:
     """
     Obtains the training and validation dataset object for a dataset specified
@@ -121,6 +123,11 @@ def get_nerf_datasets(
     ]
 
     train_idx, val_idx, test_idx = train_data["split"]
+    
+
+    if sparse_views == True:
+        n = len(train_idx)
+        train_idx = [idx for idx in range(0, n, n//sparsity_scale)]
 
     train_dataset, val_dataset, test_dataset = [
         ListDataset(

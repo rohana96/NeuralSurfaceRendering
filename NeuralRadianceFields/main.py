@@ -15,16 +15,16 @@ from pytorch3d.renderer import (
 )
 import matplotlib.pyplot as plt
 
-from implicit import volume_dict
+from NeuralRadianceFields.implicit import volume_dict
 from sampler import sampler_dict
-from renderer import renderer_dict
+from NeuralRadianceFields.renderer import renderer_dict
 from ray_utils import (
     sample_images_at_xy,
     get_pixels_from_image,
     get_random_pixels_from_image,
     get_rays_from_pixels
 )
-from data_utils import (
+from NeuralRadianceFields.data_utils import (
     dataset_from_config,
     create_surround_cameras,
     vis_grid,
@@ -36,9 +36,9 @@ from dataset import (
 )
 
 from sampler import StratifiedRaysampler
-from renderer import VolumeRenderer
+from NeuralRadianceFields.renderer import VolumeRenderer
 
-from render_functions import (
+from NeuralRadianceFields.render_functions import (
     render_points
 )
 
@@ -228,12 +228,12 @@ def train(
     # Render images_neural_surface after training
     render_images(
         model, cameras, image_size,
-        save=True, file_prefix='images_neural_surface/part_2_after_training'
+        save=True, file_prefix='images_neural_surface/part_4_after_training_sparse_nerf'
     )
     all_images = render_images(
         model, create_surround_cameras(3.0, n_poses=20), image_size, file_prefix='part_2'
     )
-    imageio.mimsave('images_neural_surface/part_2.gif', [np.uint8(im * 255) for im in all_images])
+    imageio.mimsave('images_neural_surface/part_4_sparse_nerf.gif', [np.uint8(im * 255) for im in all_images])
 
 
 def create_model(cfg):
@@ -300,6 +300,9 @@ def train_nerf(
     train_dataset, val_dataset, _ = get_nerf_datasets(
         dataset_name=cfg.data.dataset_name,
         image_size=[cfg.data.image_size[1], cfg.data.image_size[0]],
+        sparse_views=cfg.data.sparse_views,
+        sparsity_scale=cfg.data.sparsity_scale
+
     )
 
     train_dataloader = torch.utils.data.DataLoader(
@@ -314,7 +317,7 @@ def train_nerf(
     # Run the main training loop.
     for epoch in range(start_epoch, cfg.training.num_epochs):
         t_range = tqdm.tqdm(enumerate(train_dataloader))
-
+        
         for iteration, batch in t_range:
             image, camera, camera_idx = batch[0].values()
             image = image.cuda().unsqueeze(0)
@@ -369,9 +372,9 @@ def train_nerf(
             with torch.no_grad():
                 test_images = render_images(
                     model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
-                    cfg.data.image_size, file_prefix='nerf_no_view'
+                    cfg.data.image_size, file_prefix='nerf_no_view_sparse'
                 )
-                imageio.mimsave('images_neural_surface/part_3_noview.gif', [np.uint8(im * 255) for im in test_images])
+                imageio.mimsave('images_neural_surface/part_4_sparse_nerf.gif', [np.uint8(im * 255) for im in test_images])
 
 
 @hydra.main(config_path='configs', config_name='sphere')

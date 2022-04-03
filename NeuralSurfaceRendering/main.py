@@ -300,6 +300,8 @@ def train_images(
     train_dataset, val_dataset, _ = get_nerf_datasets(
         dataset_name=cfg.data.dataset_name,
         image_size=[cfg.data.image_size[1], cfg.data.image_size[0]],
+        sparse_views=cfg.data.sparse_views,
+        sparsity_scale=cfg.data.sparsity_scale
     )
 
     train_dataloader = torch.utils.data.DataLoader(
@@ -353,6 +355,7 @@ def train_images(
             loss.backward()
             optimizer.step()
 
+
             t_range.set_description(f'Epoch: {epoch:04d}, Loss: {image_loss:.06f}')
             t_range.refresh()
 
@@ -382,16 +385,16 @@ def train_images(
         ):
             test_images = render_images(
                 model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
-                cfg.data.image_size, file_prefix='volsdf'
+                cfg.data.image_size, file_prefix='volsdf_neus_sparse_s50'
             )
-            imageio.mimsave('images_neural_surface/part_3.gif', [np.uint8(im * 255) for im in test_images])
+            imageio.mimsave('images_neural_surface/part_4_neus_sparse_s50.gif', [np.uint8(im * 255) for im in test_images])
 
             try:
                 test_images = render_geometry(
                     model, create_surround_cameras(4.0, n_poses=20, up=(0.0, 0.0, 1.0), focal_length=2.0),
-                    cfg.data.image_size, file_prefix='volsdf_geometry'
+                    cfg.data.image_size, file_prefix='volsdf_geometry_neus_sparse_s50'
                 )
-                imageio.mimsave('images_neural_surface/part_3_geometry.gif', [np.uint8(im * 255) for im in test_images])
+                imageio.mimsave('images_neural_surface/part_4_geometry_neus_s50.gif', [np.uint8(im * 255) for im in test_images])
             except Exception as e:
                 print("Empty mesh")
                 pass

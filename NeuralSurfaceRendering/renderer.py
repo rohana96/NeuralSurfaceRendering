@@ -106,14 +106,20 @@ class SphereTracingRenderer(torch.nn.Module):
 
         return out
 
+def sdf_to_density_neus(signed_distance, s):
+    # TODO (Q3): Convert signed distance to density with alpha, beta parameters
+    e = torch.exp(-1*s*signed_distance)
+    sai = s*e/((1 + e)**2)
+    return sai
 
 def sdf_to_density(signed_distance, alpha, beta):
     # TODO (Q3): Convert signed distance to density with alpha, beta parameters
     sai = 0
-    if signed_distance <= 0:
-        sai = 0.5 * torch.exp(signed_distance / beta)
-    else:
-        sai = 1 - 0.5 * torch.exp(-signed_distance / beta)
+    sai = torch.where(
+        signed_distance <= 0, 
+        0.5 * torch.exp(signed_distance / beta),
+        1 - 0.5 * torch.exp(-signed_distance / beta)
+    )
     return alpha * sai
 
 
@@ -128,6 +134,8 @@ class VolumeSDFRenderer(torch.nn.Module):
         self._white_background = cfg.white_background if 'white_background' in cfg else False
         self.alpha = cfg.alpha
         self.beta = cfg.beta
+        self.s = cfg.s
+        self.dist_to_dens = cfg.distance_to_density
 
     def _compute_weights(
             self,
@@ -185,11 +193,16 @@ class VolumeSDFRenderer(torch.nn.Module):
             n_pts = cur_ray_bundle.sample_shape[1]
 
             # Call implicit function with sample points
-            distance, color = implicit_fn.get_distance_color(cur_ray_bundle.sample_points)
-            color = color.view(-1, n_pts, 3)
-            alpha, beta = 10, 0.05
-            density = sdf_to_density(distance, alpha, beta)  # TODO (Q3): convert SDF to density
+            out = implicit_fn.get_distance_color(cur_ray_bundle.sample_points)
 
+            distance = out['distance']
+            color = out['color']
+            color = color.view(-1, n_pts, 3)
+            # alpha, beta, s = 10, 0.05, 10
+            if self.dist_to_dens  == 'volsdf':
+                density = sdf_to_density(-1*distance, self.alpha, self.beta)  # TODO (Q3): convert SDF to density
+            if self.dist_to_dens  == 'neus':
+                density = sdf_to_density_neus(distance, self.s)
             # Compute length of each ray segment
             depth_values = cur_ray_bundle.sample_lengths[..., 0]
             deltas = torch.cat(
@@ -234,3 +247,9 @@ renderer_dict = {
     'sphere_tracing': SphereTracingRenderer,
     'volume_sdf': VolumeSDFRenderer
 }
+
+
+# sdf_to_density_dict = {
+#     'neus': NeUS,
+#     'volsdf' : volsdf 
+# }
