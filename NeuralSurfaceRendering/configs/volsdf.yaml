@@ -5,8 +5,8 @@ type: train_images
 data:
   image_size: [128, 128]
   dataset_name: lego
-  sparse_views: True
-  sparsity_scale: 10
+  sparse_views: False
+  sparsity_scale: 100
 
 renderer:
   type: volume_sdf

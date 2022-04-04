@@ -212,7 +212,7 @@ def train_points(
 
             # Get distances and enforce point cloud loss
             distances, gradients = model.implicit_fn.get_distance_and_gradient(points)
-            loss = torch.norm(distances)/distances.shape[0] #sphere_loss(distances, points, radius=1.0)  # TODO (Q2): Point cloud SDF loss on distances
+            loss = torch.norm(distances)/distances.shape[0]  # TODO (Q2): Point cloud SDF loss on distances
             point_loss = loss
 
             # Sample random points in bounding box

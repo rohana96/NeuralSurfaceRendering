@@ -107,7 +107,7 @@ class SphereTracingRenderer(torch.nn.Module):
         return out
 
 def sdf_to_density_neus(signed_distance, s):
-    # TODO (Q3): Convert signed distance to density with alpha, beta parameters
+    # TODO (Q4): Convert signed distance to density with s parameters
     e = torch.exp(-1*s*signed_distance)
     sai = s*e/((1 + e)**2)
     return sai

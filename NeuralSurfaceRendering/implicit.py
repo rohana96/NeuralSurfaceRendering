@@ -261,19 +261,6 @@ class MLPWithInputSkips(torch.nn.Module):
         return y
 
 
-# implicit_function:
-#   type: neural_surface
-#
-#   n_harmonic_functions_xyz: 4  ##
-#
-#   n_layers_distance: 6 ##
-#   n_hidden_neurons_distance: 128 ##
-#   append_distance: []
-#
-#   n_layers_color: 2  ##
-#   n_hidden_neurons_color: 128 ##
-#   append_color: []
-
 class NeuralSurface(torch.nn.Module):
     def __init__(
             self,
