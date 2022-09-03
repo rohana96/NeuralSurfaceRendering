@@ -1,11 +1,3 @@
-Assignment 4
-===================================
-
-Andrew ID: rohanaga
-
-Late Days: 2
-
-
 ##  1. Sphere Tracing
 
 ```
